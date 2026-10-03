@@ -1,0 +1,6 @@
+Library/
+.utmp/
+obj/
+Logs/
+.vscode/
+UserSettings/
