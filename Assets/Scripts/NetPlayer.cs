@@ -25,6 +25,12 @@ public class NetPlayer : NetworkBehaviour
         // UI: обновить счёт игрока slot == newV
     }
 
+    public void OnRestartClicked()
+    {
+        if (NetPlayer.Local != null)
+            NetPlayer.Local.CmdRestart();
+    }
+
     [Command]
     public void CmdSelectCard(uint cardNetId) =>
         GameManager.Instance.ServerSelectCard(this, cardNetId);
@@ -32,4 +38,7 @@ public class NetPlayer : NetworkBehaviour
     [Command]
     public void CmdPickTableCard(uint cardNetId) =>
         GameManager.Instance.ServerPickTableCard(this, cardNetId);
+        
+    [Command]
+    public void CmdRestart() => GameManager.Instance.ServerRestart();
 }

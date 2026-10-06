@@ -33,6 +33,8 @@ public class GameManager : NetworkBehaviour
     readonly Dictionary<NetPlayer, uint> chosenHandCard = new Dictionary<NetPlayer, uint>();
     readonly Dictionary<NetPlayer, uint> pickedTableCard = new Dictionary<NetPlayer, uint>();
     readonly List<Card> tableCards = new List<Card>();
+    
+    readonly List<Card> allCards = new List<Card>();
     Card situationCard;
     int foldCount;
     bool gameStarted;
@@ -104,6 +106,8 @@ public class GameManager : NetworkBehaviour
             foreach (var p in players)
                 DealMemCard(p);
 
+        RelayoutHands();
+
         // 9. Повторяем шаги 2–9, пока не кончатся карты
         while (situationDeck.Count > 0 && players.TrueForAll(p => hands[p].Count > 0))
         {
@@ -118,27 +122,50 @@ public class GameManager : NetworkBehaviour
             yield return new WaitUntil(() => chosenHandCard.Count == players.Count);
 
             // 4. Situation — в угол, выбранные карты — на стол лицом вверх
-            RpcMoveCard(situationCard.netId, situationCorner.position);
-            int i0 = 0;
-            tableCards.Clear();
-            foreach (var p in players)
+            // Выкладываем выбранные карты на стол и раскрываем их
+            foreach (var kv in chosenHandCard)
             {
-                Card c = GetCard(chosenHandCard[p]);
+                Card c = GetCard(kv.Value);
+
+                // Позиция на столе (с разлётом влево/вправо от tableSlot)
+                int i0 = kv.Key.slot; // 0 или 1
                 Vector3 basePos = tableSlot.position;
-                RpcMoveCard(c.netId, i0 == 0
+                Vector3 targetPos = i0 == 0
                     ? basePos - Vector3.right * (cardSpacing * 0.5f)
-                    : basePos + Vector3.right * (cardSpacing * 0.5f));
+                    : basePos + Vector3.right * (cardSpacing * 0.5f);
+
+                RpcMoveCard(c.netId, targetPos);
+
+                // Раскрываем карту для всех
                 c.faceUp = true;
-                c.selectedBy = 0;
+
+                // Сбрасываем подсветку выбора — теперь цвет задаётся через faceUp (серый)
+                c.selectedBy = 0; 
+
+                hands[kv.Key].Remove(c);
                 tableCards.Add(c);
-                i0++;
             }
+            
+            RelayoutHands();
+
+            // Ситуация уезжает в угол
+            RpcMoveCard(situationCard.netId, situationCorner.position);
+
+            phase = GamePhase.PickWinner;
+            status = "Выберите карту на столе";
+
 
             // 5. Игроки выбирают карту на столе
             pickedTableCard.Clear();
             phase = GamePhase.PickWinner;
             status = "Выберите карту на столе";
             yield return new WaitUntil(() => pickedTableCard.Count == players.Count);
+
+            // раскрытие: теперь оба видят, кто что выбрал
+            foreach (var kv in pickedTableCard)
+            {
+                GetCard(kv.Value).selectedBy = 0; // Убираем подсветку, оставляем серый цвет
+            }
 
             // 6. Очко тому, чью карту выбрали
             foreach (var kv in pickedTableCard)
@@ -156,15 +183,17 @@ public class GameManager : NetworkBehaviour
             RpcMoveCard(situationCard.netId, foldSlot.position + Vector3.right * (foldCount++ * 0.02f));
             situationCard.faceUp = false;
             situationCard.ownerNetId = 0;
+            situationCard.selectedBy = 0;
+            situationCard.inFold = true;
 
             foreach (var p in players)
             {
                 Card c = GetCard(chosenHandCard[p]);
-                hands[p].Remove(c);
                 RpcMoveCard(c.netId, foldSlot.position + Vector3.right * (foldCount++ * 0.02f));
                 c.faceUp = false;
                 c.inFold = true;
                 c.ownerNetId = 0;
+                c.selectedBy = 0;
             }
             situationCard = null;
 
@@ -173,8 +202,24 @@ public class GameManager : NetworkBehaviour
             foreach (var p in players)
                 canContinue &= DealMemCard(p);
 
+            RelayoutHands();
+
             yield return new WaitForSeconds(0.5f);
             if (!canContinue) break;
+        }
+
+        // финал: все карты рук — в Fold рубашкой вверх
+        phase = GamePhase.BetweenRounds;
+        foreach (var p in players)
+        {
+            foreach (var c in hands[p])
+            {
+                RpcMoveCard(c.netId, foldSlot.position + Vector3.right * (foldCount++ * 0.02f));
+                c.faceUp = false;
+                c.ownerNetId = 0;
+                c.inFold = true;
+            }
+            hands[p].Clear();
         }
 
         // 10. Победитель
@@ -188,9 +233,8 @@ public class GameManager : NetworkBehaviour
     {
         if (memDeck.Count == 0) return false;
 
-        int i = hands[p].Count;
         Transform anchor = p.slot == 0 ? handSlotA : handSlotB;
-        Vector3 pos = anchor.position + Vector3.right * ((i - 1) * cardSpacing);
+        Vector3 pos = anchor.position + Vector3.right * (hands[p].Count * cardSpacing);
 
         Card c = SpawnCard(CardDeck.Mem, memDeck[0], p.netId, pos);
         memDeck.RemoveAt(0);
@@ -207,6 +251,7 @@ public class GameManager : NetworkBehaviour
         c.faceUp = false;
         c.ownerNetId = owner;
         NetworkServer.Spawn(c.gameObject);
+        allCards.Add(c);
         return c;
     }
 
@@ -227,7 +272,7 @@ public class GameManager : NetworkBehaviour
         if (c == null || c.ownerNetId != p.netId || !hands[p].Contains(c)) return;
 
         chosenHandCard[p] = cardNetId;
-        c.selectedBy = p.netId; // подсветка выбранного
+        c.selectedBy = p.netId;
     }
 
     public void ServerPickTableCard(NetPlayer p, uint cardNetId)
@@ -237,7 +282,7 @@ public class GameManager : NetworkBehaviour
         if (c == null || !tableCards.Contains(c)) return;
 
         pickedTableCard[p] = cardNetId;
-        c.selectedBy = p.netId;
+        c.selectedBy = p.netId; // Подсветка видна только владельцу
     }
 
     [ClientRpc]
@@ -245,5 +290,47 @@ public class GameManager : NetworkBehaviour
     {
         if (NetworkClient.spawned.TryGetValue(cardNetId, out var ni))
             ni.transform.position = pos;
+    }
+
+    public void ServerRestart()
+    {
+        if (!gameStarted || phase != GamePhase.GameOver) return;
+
+        StopAllCoroutines();
+
+        // сносим все карты на свете
+        foreach (var c in allCards)
+            if (c != null) NetworkServer.Destroy(c.gameObject);
+        allCards.Clear();
+
+        hands.Clear();
+        tableCards.Clear();
+        situationCard = null;
+        chosenHandCard.Clear();
+        pickedTableCard.Clear();
+        foldCount = 0;
+
+        result = "";
+        status = "Игра началась";
+
+        foreach (var p in players)
+        {
+            p.score = 0;
+            hands[p] = new List<Card>();
+        }
+
+        gameStarted = true;
+        StartCoroutine(ServerRunGame());
+    }
+
+    void RelayoutHands()
+    {
+        for (int pi = 0; pi < players.Count; pi++)
+        {
+            Transform anchor = pi == 0 ? handSlotA : handSlotB;
+            var hand = hands[players[pi]];
+            for (int i = 0; i < hand.Count; i++)
+                RpcMoveCard(hand[i].netId, anchor.position + Vector3.right * (i * cardSpacing));
+        }
     }
 }
