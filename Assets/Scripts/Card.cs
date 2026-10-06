@@ -1,136 +1,50 @@
-using System;
-using UnityEngine;
 using Mirror;
+using UnityEngine;
 
 public class Card : NetworkBehaviour
 {
-    public enum CardType { Mem, Situation }
+    [SyncVar(hook = nameof(OnAnyChanged))] public CardDeck deck;
+    [SyncVar(hook = nameof(OnAnyChanged))] public int cardIndex;
+    [SyncVar(hook = nameof(OnAnyChanged))] public bool faceUp;
+    [SyncVar(hook = nameof(OnAnyChanged))] public uint ownerNetId; // 0 = никому
+    [SyncVar(hook = nameof(OnAnyChanged))] public uint selectedBy; // кто уже выбрал (для подсветки)
 
-    [SyncVar] public CardType type;
-    [SyncVar] public int cardId;
-    [SyncVar] int frontSpriteIndex = -1;
-    [SyncVar] public float moveSpeed = 50f;
+    [SyncVar(hook = nameof(OnAnyChanged))] public bool inFold;
 
-    [SyncVar(hook = nameof(OnFaceUpChanged))]
-    bool networkFaceUp;
+    public CardDatabase db;
 
-    [SyncVar(hook = nameof(OnSortingOrderChanged))]
-    int networkSortingOrder;
+    SpriteRenderer rend;
 
-    [SyncVar(hook = nameof(OnTargetPosChanged))]
-    Vector3 networkTargetPos;
+    void Awake() => rend = GetComponent<SpriteRenderer>();
 
-    public bool IsClickable { get; set; }
+    public override void OnStartClient() => RefreshVisual();
 
-    private SpriteRenderer sr;
-    private Vector3 targetPos;
-    private bool isMoving;
-    private Action onArrive;
-    private bool localFaceUpOverride;
+    void OnAnyChanged(uint oldV, uint newV) => RefreshVisual();
+    void OnAnyChanged(CardDeck o, CardDeck n) => RefreshVisual();
+    void OnAnyChanged(int o, int n) => RefreshVisual();
+    void OnAnyChanged(bool o, bool n) => RefreshVisual();
 
-    void Awake()
+    void RefreshVisual()
     {
-        sr = GetComponent<SpriteRenderer>();
+        if (rend == null) rend = GetComponent<SpriteRenderer>();
+        bool showFront = faceUp || ownerNetId == (NetPlayer.Local ? NetPlayer.Local.netId : 0);
+
+        // в Fold лежит рубашка foldBack, в руках и на столе — рубашка своей колоды
+        bool inFold = this.inFold; // см. правку ниже
+        rend.sprite = showFront ? db.GetFront(deck, cardIndex) : (inFold ? db.foldBack : db.GetBack(deck));
+
+        rend.color = selectedBy != 0 ? new Color(0.7f, 0.7f, 0.7f) : Color.white;
     }
 
-    // Вызывается ТОЛЬКО на сервере до NetworkServer.Spawn
-    public void Init(CardType type, int id, int spriteIndex)
+    // Клик мышью по карте
+    void OnMouseUpAsButton()
     {
-        this.type = type;
-        cardId = id;
-        frontSpriteIndex = spriteIndex;
-        networkFaceUp = false;
-        networkSortingOrder = 0;
-    }
+        if (NetPlayer.Local == null || GameManager.Instance == null) return;
+        if (!GameManager.Instance.IsCardClickable(this)) return;
 
-    public override void OnStartClient()
-    {
-        base.OnStartClient();
-        targetPos = transform.position;
-        UpdateDisplay();
-        UpdateCollider();
-    }
-
-    void OnFaceUpChanged(bool old, bool val) => UpdateDisplay();
-    void OnSortingOrderChanged(int old, int val) { if (sr) sr.sortingOrder = val; }
-    void OnTargetPosChanged(Vector3 old, Vector3 val)
-    {
-        targetPos = val;
-        isMoving = true;
-    }
-
-    void UpdateDisplay()
-    {
-        if (sr == null) return;
-        bool showFace = localFaceUpOverride || networkFaceUp;
-        var gm = NetworkGameManager.Instance;
-        if (gm == null) return;
-
-        if (showFace && frontSpriteIndex >= 0)
-        {
-            var sprites = type == CardType.Situation
-                ? gm.situationSprites
-                : gm.memSprites;
-            if (frontSpriteIndex < sprites.Length)
-                sr.sprite = sprites[frontSpriteIndex];
-        }
-        else if (gm.backside != null)
-        {
-            sr.sprite = gm.backside;
-        }
-    }
-
-    void UpdateCollider()
-    {
-        BoxCollider2D col = GetComponent<BoxCollider2D>();
-        if (col != null && sr != null && sr.sprite != null)
-            col.size = sr.sprite.bounds.size;
-    }
-
-    // Сервер: синхронит для всех
-    public void SetFaceUp(bool faceUp) => networkFaceUp = faceUp;
-
-    // Клиент: локальный показ (только владелец видит лицо)
-    public void SetLocalFaceUp(bool faceUp)
-    {
-        localFaceUpOverride = faceUp;
-        UpdateDisplay();
-    }
-
-    public void SetSortingOrder(int order) => networkSortingOrder = order;
-
-    // Сервер: запускает движение, SyncVar синхронит цель всем
-    public void MoveTo(Vector3 target, Action callback = null)
-    {
-        networkTargetPos = new Vector3(target.x, target.y, 0f);
-        targetPos = networkTargetPos;
-        isMoving = true;
-        onArrive = callback;
-    }
-
-    void Update()
-    {
-        if (!isMoving) return;
-
-        transform.position = Vector3.MoveTowards(
-            transform.position, targetPos, moveSpeed * Time.deltaTime);
-
-        if (Vector3.Distance(transform.position, targetPos) < 0.01f)
-        {
-            transform.position = targetPos;
-            isMoving = false;
-            if (isServer) // колбэк срабатывает только на сервере
-            {
-                onArrive?.Invoke();
-                onArrive = null;
-            }
-        }
-    }
-
-    void OnMouseDown()
-    {
-        if (!IsClickable) return;
-        if (NetworkPlayer.Local != null)
-            NetworkPlayer.Local.CmdSelectCard(netIdentity.netId);
+        if (GameManager.Instance.phase == GamePhase.SelectCard)
+            NetPlayer.Local.CmdSelectCard(netId);
+        else
+            NetPlayer.Local.CmdPickTableCard(netId);
     }
 }
