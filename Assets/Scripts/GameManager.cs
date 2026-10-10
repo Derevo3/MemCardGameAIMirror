@@ -10,7 +10,6 @@ public class GameManager : NetworkBehaviour
     public static GameManager Instance { get; private set; }
 
     [Header("Данные")]
-    public CardDatabase db;
     public Card cardPrefab;
     public float cardSpacing = 1.2f;
 
@@ -25,6 +24,14 @@ public class GameManager : NetworkBehaviour
     [SyncVar(hook = nameof(OnStatusChanged))] public string status = "Ожидание игроков";
     [SyncVar(hook = nameof(OnResultChanged))] public string result = "";
 
+     // --- Новые поля для автосбора ---
+    [Header("Автосбор спрайтов")]
+    public string memPath = "MemCards";      // папка Assets/Resources/MemCards
+    public string situationPath = "SituationCards"; // папка Assets/Resources/SituationCards
+
+    private List<Sprite> memSprites = new List<Sprite>();
+    private List<Sprite> situationSprites = new List<Sprite>();
+
     // Серверные структуры
     readonly List<int> memDeck = new List<int>();
     readonly List<int> situationDeck = new List<int>();
@@ -38,11 +45,21 @@ public class GameManager : NetworkBehaviour
     Card situationCard;
     int foldCount;
     bool gameStarted;
+    public Sprite memBackSprite;
+    public Sprite situationBackSprite;
 
     void Awake()
     {
+        InitializeCardLists();
+
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+
+        // Проверка рубашки: если в инспекторе пусто — сразу лог
+        if (memBackSprite == null)
+            Debug.LogError("[GameManager] Поле 'Mem Back Sprite' не назначено в инспекторе! Карты будут без рубашки.");
+        else
+            Debug.Log("[GameManager] Рубашка успешно назначена.");
     }
 
     public override void OnStartClient()
@@ -78,6 +95,37 @@ public class GameManager : NetworkBehaviour
             StartCoroutine(ServerRunGame());
     }
 
+    void InitializeCardLists()
+    {
+        // Автоматически загружаем все спрайты из папок
+        Sprite[] memRaw = Resources.LoadAll<Sprite>(memPath);
+        Sprite[] situationRaw = Resources.LoadAll<Sprite>(situationPath);
+
+        memSprites.Clear();
+        situationSprites.Clear();
+
+        memSprites.AddRange(memRaw);
+        situationSprites.AddRange(situationRaw);
+
+        Debug.Log($"[GameManager] Загружено: {memSprites.Count} карт Mem, {situationSprites.Count} Situation");
+
+        if (memSprites.Count == 0) Debug.LogError("[GameManager] Нет карт в Resources/" + memPath);
+        if (situationSprites.Count == 0) Debug.LogError("[GameManager] Нет карт в Resources/" + situationPath);
+    }
+
+     // Вспомогательный метод: получить спрайт по индексу (для клиента)
+    public Sprite GetMemSprite(int index)
+    {
+        if (index < 0 || index >= memSprites.Count) return null;
+        return memSprites[index];
+    }
+
+    public Sprite GetSituationSprite(int index)
+    {
+        if (index < 0 || index >= situationSprites.Count) return null;
+        return situationSprites[index];
+    }
+
     void Shuffle(List<int> list)
     {
         for (int i = list.Count - 1; i > 0; i--)
@@ -93,8 +141,13 @@ public class GameManager : NetworkBehaviour
 
         memDeck.Clear();
         situationDeck.Clear();
-        for (int i = 0; i < db.GetDeckSize(CardDeck.Mem); i++) memDeck.Add(i);
-        for (int i = 0; i < db.GetDeckSize(CardDeck.Situation); i++) situationDeck.Add(i);
+
+        int memCount = memSprites.Count;
+        int situationCount = situationSprites.Count;
+
+        for (int i = 0; i < memCount; i++) memDeck.Add(i);
+        for (int i = 0; i < situationCount; i++) situationDeck.Add(i);
+
         Shuffle(memDeck);
         Shuffle(situationDeck);
 
@@ -111,8 +164,27 @@ public class GameManager : NetworkBehaviour
         // 9. Повторяем шаги 2–9, пока не кончатся карты
         while (situationDeck.Count > 0 && players.TrueForAll(p => hands[p].Count > 0))
         {
-            // 2. Situation в центр
-            situationCard = SpawnCard(CardDeck.Situation, situationDeck[0], 0, situationSlot.position);
+            int cardIndex = situationDeck[0];
+
+            // Защита от выхода за границы
+            if (cardIndex < 0 || cardIndex >= situationSprites.Count)
+            {
+                Debug.LogError($"[GameManager] Индекс {cardIndex} не найден в списке Situation (всего: {situationSprites.Count})");
+                situationDeck.RemoveAt(0); // убираем проблемный индекс, чтобы не зациклиться
+                continue;
+            }
+
+            Sprite sprite = GetSituationSprite(cardIndex);
+            if (sprite == null)
+            {
+                Debug.LogError("[GameManager] Спрайт для Situation равен null");
+                situationDeck.RemoveAt(0);
+                continue;
+            }
+
+            // Теперь передаём 5 аргументов, включая sprite
+            situationCard = SpawnCard(CardDeck.Situation, cardIndex, 0, situationSlot.position, sprite, memBackSprite);
+            
             situationDeck.RemoveAt(0);
 
             // 3. Игроки выбирают карту из руки
@@ -138,6 +210,8 @@ public class GameManager : NetworkBehaviour
 
                 // Раскрываем карту для всех
                 c.faceUp = true;
+                
+                c.ownerNetId = 0; // <-- делаем общей, чтобы все видели лицом
 
                 // Сбрасываем подсветку выбора — теперь цвет задаётся через faceUp (серый)
                 c.selectedBy = 0; 
@@ -233,16 +307,34 @@ public class GameManager : NetworkBehaviour
     {
         if (memDeck.Count == 0) return false;
 
+        int cardIndex = memDeck[0];
+
+        if (cardIndex < 0 || cardIndex >= memSprites.Count)
+        {
+            Debug.LogError($"[DealMemCard] Индекс карты {cardIndex} не найден в списке спрайтов. Всего карт: {memSprites.Count}");
+            return false;
+        }
+
         Transform anchor = p.slot == 0 ? handSlotA : handSlotB;
         Vector3 pos = anchor.position + Vector3.right * (hands[p].Count * cardSpacing);
 
-        Card c = SpawnCard(CardDeck.Mem, memDeck[0], p.netId, pos);
+        // Получаем спрайт по индексу
+        Sprite cardSprite = GetMemSprite(cardIndex);
+        if (cardSprite == null)
+        {
+            Debug.LogError($"[DealMemCard] Спрайт для индекса {cardIndex} равен null");
+            return false;
+        }
+
+        // Передаём спрайт в SpawnCard (нужно будет чуть доработать сам SpawnCard — см. ниже)
+        Card c = SpawnCard(CardDeck.Mem, cardIndex, p.netId, pos, cardSprite, memBackSprite);
+
         memDeck.RemoveAt(0);
         hands[p].Add(c);
         return true;
     }
 
-    Card SpawnCard(CardDeck deck, int index, uint owner, Vector3 pos)
+    Card SpawnCard(CardDeck deck, int index, uint owner, Vector3 pos, Sprite sprite, Sprite memBackSprite)
     {
         Card c = Instantiate(cardPrefab, pos, Quaternion.identity);
         c.inFold = false;
@@ -250,6 +342,8 @@ public class GameManager : NetworkBehaviour
         c.cardIndex = index;
         c.faceUp = false;
         c.ownerNetId = owner;
+        c.SetSpriteImmediate(sprite);
+        c.SetBackSpriteImmediate(memBackSprite);
         NetworkServer.Spawn(c.gameObject);
         allCards.Add(c);
         return c;
@@ -289,7 +383,11 @@ public class GameManager : NetworkBehaviour
     void RpcMoveCard(uint cardNetId, Vector3 pos)
     {
         if (NetworkClient.spawned.TryGetValue(cardNetId, out var ni))
-            ni.transform.position = pos;
+            {
+                var card = ni.GetComponent<Card>();
+                if (card != null)
+                    card.SetTargetPosition(pos); // клиент сам плавно доедет до точки
+            }
     }
 
     public void ServerRestart()

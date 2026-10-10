@@ -144,7 +144,55 @@ Transform:
   m_GameObject: {fileID: 222728705}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -4, z: 0}
+  m_LocalPosition: {x: -1, y: -4, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &311564914
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 311564916}
+  - component: {fileID: 311564915}
+  m_Layer: 0
+  m_Name: DeckLoader
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &311564915
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 311564914}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b59f2102dc8a2914fb889942500c5295, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  memCardsPath: MemCards
+  situationCardsPath: SituationCards
+  memCards: []
+  situationCards: []
+--- !u!4 &311564916
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 311564914}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 8, y: 4, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -516,7 +564,6 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  db: {fileID: 11400000, guid: 8f76316380b06fe44bf836f1cb73befe, type: 2}
   cardPrefab: {fileID: 1686932968033570181, guid: 361800edff93f8f49b3863bbbee1ba79, type: 3}
   cardSpacing: 1.2
   handSlotA: {fileID: 222728706}
@@ -528,6 +575,10 @@ MonoBehaviour:
   phase: 0
   status: "\u041E\u0436\u0438\u0434\u0430\u043D\u0438\u0435 \u0438\u0433\u0440\u043E\u043A\u043E\u0432"
   result: 
+  memPath: MemCards
+  situationPath: SituationCards
+  memBackSprite: {fileID: 1393471084991727964, guid: 3d3f66eb2c11dee4c944eccd0cac3c63, type: 3}
+  situationBackSprite: {fileID: -2288048064237833889, guid: fd7f6e80aafb4c34291b5bed33e96866, type: 3}
 --- !u!114 &503548630
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -585,7 +636,7 @@ Transform:
   m_GameObject: {fileID: 503914389}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -8, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1056,7 +1107,7 @@ Transform:
   m_GameObject: {fileID: 1005867893}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 8, y: 4, z: 0}
+  m_LocalPosition: {x: -8, y: 4, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1192,7 +1243,7 @@ Transform:
   m_GameObject: {fileID: 1667629371}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 4, z: 0}
+  m_LocalPosition: {x: -1, y: 4, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1359,7 +1410,7 @@ Transform:
   m_GameObject: {fileID: 1689343631}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -8, y: 4, z: 0}
+  m_LocalPosition: {x: -7, y: 4, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1594,4 +1645,5 @@ SceneRoots:
   - {fileID: 503548631}
   - {fileID: 1164784242}
   - {fileID: 448095859}
+  - {fileID: 311564916}
   - {fileID: 1779591224}
