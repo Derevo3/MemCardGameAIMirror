@@ -3,7 +3,6 @@ using UnityEngine;
 
 public class Card : NetworkBehaviour
 {
-    [SyncVar(hook = nameof(OnAnyChanged))] public CardDeck deck;
     [SyncVar(hook = nameof(OnAnyChanged))] public int cardIndex;
     [SyncVar(hook = nameof(OnAnyChanged))] public bool faceUp;
     [SyncVar(hook = nameof(OnAnyChanged))] public uint ownerNetId;
@@ -44,7 +43,6 @@ public class Card : NetworkBehaviour
 
     // Хуки для всех SyncVar
     void OnAnyChanged(uint oldV, uint newV) => RefreshVisual();
-    void OnAnyChanged(CardDeck o, CardDeck n) => RefreshVisual();
     void OnAnyChanged(int o, int n) => RefreshVisual();
     void OnAnyChanged(bool o, bool n) => RefreshVisual();
 
@@ -61,17 +59,6 @@ public class Card : NetworkBehaviour
         rend.sprite = showFront
             ? GameManager.Instance.GetMemSprite(cardIndex)
             : backSprite;
-
-        /*Sprite faceSprite = null;
-        if (GameManager.Instance != null)
-        {
-            faceSprite = GameManager.Instance.GetMemSprite(cardIndex);
-        }
-
-        if (faceSprite != null)
-        {
-            rend.sprite = faceSprite;
-        }*/
 
         if (inFold)
         {

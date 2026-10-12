@@ -144,7 +144,7 @@ Transform:
   m_GameObject: {fileID: 222728705}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -4, z: 0}
+  m_LocalPosition: {x: -1, y: -4, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -520,7 +520,7 @@ MonoBehaviour:
   cardSpacing: 1.2
   handSlotA: {fileID: 222728706}
   handSlotB: {fileID: 1667629372}
-  situationSlot: {fileID: 503914390}
+  situationSlot: {fileID: 902124962}
   situationCorner: {fileID: 1689343632}
   tableSlot: {fileID: 902124962}
   foldSlot: {fileID: 1005867894}
@@ -1193,7 +1193,7 @@ Transform:
   m_GameObject: {fileID: 1667629371}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 4, z: 0}
+  m_LocalPosition: {x: -1, y: 4, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1360,7 +1360,7 @@ Transform:
   m_GameObject: {fileID: 1689343631}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -7, y: 4, z: 0}
+  m_LocalPosition: {x: -6, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

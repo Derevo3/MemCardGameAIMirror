@@ -159,7 +159,7 @@ public class GameManager : NetworkBehaviour
             // 2. Situation в центр
             int cardIndex = situationDeck[0];
             Sprite cardSprite = GetSituationSprite(cardIndex);
-            situationCard = SpawnCard(CardDeck.Situation, situationDeck[0], 0, situationSlot.position, cardSprite);
+            situationCard = SpawnCard(situationDeck[0], 0, situationSlot.position, cardSprite);
             situationDeck.RemoveAt(0);
 
             // 3. Игроки выбирают карту из руки
@@ -293,17 +293,16 @@ public class GameManager : NetworkBehaviour
 
         Sprite cardSprite = GetMemSprite(cardIndex);
 
-        Card c = SpawnCard(CardDeck.Mem, cardIndex, p.netId, pos, cardSprite);
+        Card c = SpawnCard(cardIndex, p.netId, pos, cardSprite);
         memDeck.RemoveAt(0);
         hands[p].Add(c);
         return true;
     }
 
-    Card SpawnCard(CardDeck deck, int index, uint owner, Vector3 pos, Sprite sprite)
+    Card SpawnCard(int index, uint owner, Vector3 pos, Sprite sprite)
     {
         Card c = Instantiate(cardPrefab, pos, Quaternion.identity);
         c.inFold = false;
-        c.deck = deck;
         c.cardIndex = index;
         c.faceUp = false;
         c.ownerNetId = owner;
