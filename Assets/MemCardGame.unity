@@ -516,7 +516,6 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  db: {fileID: 11400000, guid: 8f76316380b06fe44bf836f1cb73befe, type: 2}
   cardPrefab: {fileID: 1686932968033570181, guid: 361800edff93f8f49b3863bbbee1ba79, type: 3}
   cardSpacing: 1.2
   handSlotA: {fileID: 222728706}
@@ -528,6 +527,8 @@ MonoBehaviour:
   phase: 0
   status: "\u041E\u0436\u0438\u0434\u0430\u043D\u0438\u0435 \u0438\u0433\u0440\u043E\u043A\u043E\u0432"
   result: 
+  memPath: MemCards
+  situationPath: SituationCards
 --- !u!114 &503548630
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1056,7 +1057,7 @@ Transform:
   m_GameObject: {fileID: 1005867893}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 8, y: 4, z: 0}
+  m_LocalPosition: {x: -8, y: 4, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1359,7 +1360,7 @@ Transform:
   m_GameObject: {fileID: 1689343631}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -8, y: 4, z: 0}
+  m_LocalPosition: {x: -7, y: 4, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

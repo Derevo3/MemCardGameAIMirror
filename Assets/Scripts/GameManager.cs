@@ -10,7 +10,6 @@ public class GameManager : NetworkBehaviour
     public static GameManager Instance { get; private set; }
 
     [Header("Данные")]
-    public CardDatabase db;
     public Card cardPrefab;
     public float cardSpacing = 1.2f;
 
@@ -24,6 +23,14 @@ public class GameManager : NetworkBehaviour
     [SyncVar(hook = nameof(OnPhaseChanged))] public GamePhase phase = GamePhase.Waiting;
     [SyncVar(hook = nameof(OnStatusChanged))] public string status = "Ожидание игроков";
     [SyncVar(hook = nameof(OnResultChanged))] public string result = "";
+
+    // --- Новые поля для автосбора ---
+    [Header("Автосбор спрайтов")]
+    public string memPath = "MemCards";
+    public string situationPath = "SituationCards";
+
+    private List<Sprite> memSprites = new List<Sprite>();
+    private List<Sprite> situationSprites = new List<Sprite>();
 
     // Серверные структуры
     readonly List<int> memDeck = new List<int>();
@@ -41,6 +48,8 @@ public class GameManager : NetworkBehaviour
 
     void Awake()
     {
+        InitializeCardLists();
+
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
     }
@@ -63,6 +72,37 @@ public class GameManager : NetworkBehaviour
         if (phase == GamePhase.PickWinner)
             return c.faceUp;
         return false;
+    }
+
+    void InitializeCardLists()
+    {
+        // Автоматически загружаем все спрайты из папок
+        Sprite[] memRaw = Resources.LoadAll<Sprite>(memPath);
+        Sprite[] situationRaw = Resources.LoadAll<Sprite>(situationPath);
+
+        memSprites.Clear();
+        situationSprites.Clear();
+
+        memSprites.AddRange(memRaw);
+        situationSprites.AddRange(situationRaw);
+
+        Debug.Log($"[GameManager] Загружено: {memSprites.Count} карт Mem, {situationSprites.Count} Situation");
+
+        if (memSprites.Count == 0) Debug.LogError("[GameManager] Нет карт в Resources/" + memPath);
+        if (situationSprites.Count == 0) Debug.LogError("[GameManager] Нет карт в Resources/" + situationPath);
+    }
+
+     // Вспомогательный метод: получить спрайт по индексу (для клиента)
+    public Sprite GetMemSprite(int index)
+    {
+        if (index < 0 || index >= memSprites.Count) return null;
+        return memSprites[index];
+    }
+
+    public Sprite GetSituationSprite(int index)
+    {
+        if (index < 0 || index >= situationSprites.Count) return null;
+        return situationSprites[index];
     }
 
     // ---------- СЕРВЕР ----------
@@ -93,8 +133,13 @@ public class GameManager : NetworkBehaviour
 
         memDeck.Clear();
         situationDeck.Clear();
-        for (int i = 0; i < db.GetDeckSize(CardDeck.Mem); i++) memDeck.Add(i);
-        for (int i = 0; i < db.GetDeckSize(CardDeck.Situation); i++) situationDeck.Add(i);
+
+        int memCount = memSprites.Count;
+        int situationCount = situationSprites.Count;
+
+        for (int i = 0; i < memCount; i++) memDeck.Add(i);
+        for (int i = 0; i < situationCount; i++) situationDeck.Add(i);
+
         Shuffle(memDeck);
         Shuffle(situationDeck);
 
@@ -112,7 +157,9 @@ public class GameManager : NetworkBehaviour
         while (situationDeck.Count > 0 && players.TrueForAll(p => hands[p].Count > 0))
         {
             // 2. Situation в центр
-            situationCard = SpawnCard(CardDeck.Situation, situationDeck[0], 0, situationSlot.position);
+            int cardIndex = situationDeck[0];
+            Sprite cardSprite = GetSituationSprite(cardIndex);
+            situationCard = SpawnCard(CardDeck.Situation, situationDeck[0], 0, situationSlot.position, cardSprite);
             situationDeck.RemoveAt(0);
 
             // 3. Игроки выбирают карту из руки
@@ -233,16 +280,26 @@ public class GameManager : NetworkBehaviour
     {
         if (memDeck.Count == 0) return false;
 
+        int cardIndex = memDeck[0];
+
+        if (cardIndex < 0 || cardIndex >= memSprites.Count)
+        {
+            Debug.LogError($"[DealMemCard] Индекс карты {cardIndex} не найден в списке спрайтов. Всего карт: {memSprites.Count}");
+            return false;
+        }
+
         Transform anchor = p.slot == 0 ? handSlotA : handSlotB;
         Vector3 pos = anchor.position + Vector3.right * (hands[p].Count * cardSpacing);
 
-        Card c = SpawnCard(CardDeck.Mem, memDeck[0], p.netId, pos);
+        Sprite cardSprite = GetMemSprite(cardIndex);
+
+        Card c = SpawnCard(CardDeck.Mem, cardIndex, p.netId, pos, cardSprite);
         memDeck.RemoveAt(0);
         hands[p].Add(c);
         return true;
     }
 
-    Card SpawnCard(CardDeck deck, int index, uint owner, Vector3 pos)
+    Card SpawnCard(CardDeck deck, int index, uint owner, Vector3 pos, Sprite sprite)
     {
         Card c = Instantiate(cardPrefab, pos, Quaternion.identity);
         c.inFold = false;
@@ -289,7 +346,11 @@ public class GameManager : NetworkBehaviour
     void RpcMoveCard(uint cardNetId, Vector3 pos)
     {
         if (NetworkClient.spawned.TryGetValue(cardNetId, out var ni))
-            ni.transform.position = pos;
+        {
+            var card = ni.GetComponent<Card>();
+                if (card != null)
+                    card.SetTargetPosition(pos);
+        }
     }
 
     public void ServerRestart()

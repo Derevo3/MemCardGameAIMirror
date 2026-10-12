@@ -131,8 +131,8 @@
     <Compile Include="Assets\Mirror\Examples\MultipleMatches\Scripts\PlayerGUI.cs" />
     <Compile Include="Assets\Mirror\Examples\PickupsDropsChilds\Scripts\Enumerations.cs" />
     <Compile Include="Assets\Mirror\Examples\MultipleMatches\Scripts\MatchMessages.cs" />
-    <Compile Include="Assets\Mirror\Examples\Chat\Scripts\Player.cs" />
     <Compile Include="Assets\Mirror\Examples\BenchmarkPrediction\NetworkManagerPredictionBenchmark.cs" />
+    <Compile Include="Assets\Mirror\Examples\Chat\Scripts\Player.cs" />
     <Compile Include="Assets\Mirror\Examples\PickupsDropsChilds\Scripts\Interfaces\IEquipped.cs" />
     <Compile Include="Assets\Mirror\Examples\BenchmarkStinkySteak\Dependencies\netcode-benchmarker-util\Runtime\Scripts\RandomVector3.cs" />
     <Compile Include="Assets\Mirror\Examples\Pong\Scripts\NetworkManagerPong.cs" />
@@ -192,8 +192,8 @@
     <Compile Include="Assets\Mirror\Examples\RigidbodyPhysics\Scripts\AddForce.cs" />
     <Compile Include="Assets\Mirror\Examples\BenchmarkStinkySteak\Dependencies\Unity-Simulation-Timer\Runtime\PauseableSimulationTimer.cs" />
     <Compile Include="Assets\Mirror\Examples\RigidbodyBenchmark\Scripts\RigidbodyBenchmarkNetworkManager.cs" />
-    <Compile Include="Assets\Mirror\Examples\BenchmarkStinkySteak\Dependencies\netcode-benchmarker-util\Runtime\Scripts\BehaviourWrapper\SinMoveYWrapper.cs" />
     <Compile Include="Assets\Mirror\Examples\BenchmarkStinkySteak\Dependencies\netcode-benchmarker-util\Runtime\Scripts\BehaviourConfig.cs" />
+    <Compile Include="Assets\Mirror\Examples\BenchmarkStinkySteak\Dependencies\netcode-benchmarker-util\Runtime\Scripts\BehaviourWrapper\SinMoveYWrapper.cs" />
     <Compile Include="Assets\Mirror\Examples\_Common\Scripts\Respawn.cs" />
     <Compile Include="Assets\Mirror\Examples\AdditiveLevels\Scripts\AdditiveLevelsNetworkManager.cs" />
     <Compile Include="Assets\Mirror\Examples\TopDownShooter\Scripts\CameraTopDown.cs" />
@@ -220,8 +220,8 @@
     <Compile Include="Assets\Mirror\Examples\LagCompensation\Snapshot3D.cs" />
     <Compile Include="Assets\Mirror\Examples\AutoLANClientController\Scripts\AutoLANNetworkDiscovery.cs" />
     <Compile Include="Assets\Mirror\Examples\_Common\Controllers\TankController\TankHealth.cs" />
-    <Compile Include="Assets\Mirror\Examples\BilliardsPredicted\Ball\WhiteBallPredicted.cs" />
     <Compile Include="Assets\Mirror\Examples\HexSpatialHash\Scripts\Hex3DNetworkManager.cs" />
+    <Compile Include="Assets\Mirror\Examples\BilliardsPredicted\Ball\WhiteBallPredicted.cs" />
     <Compile Include="Assets\Mirror\Examples\BenchmarkStinkySteak\Dependencies\Unity-Simulation-Timer\Runtime\SimulationTimer.cs" />
     <Compile Include="Assets\Mirror\Examples\MultipleAdditiveScenes\Scripts\PhysicsCollision.cs" />
     <Compile Include="Assets\Mirror\Examples\HexSpatialHash\Scripts\Hex2DPlayer.cs" />

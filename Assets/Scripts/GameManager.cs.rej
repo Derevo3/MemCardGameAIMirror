@@ -1,0 +1,9 @@
+diff a/Assets/Scripts/GameManager.cs b/Assets/Scripts/GameManager.cs	(rejected hunks)
+@@ -27,6 +27,7 @@
+      // --- Новые поля для автосбора ---
+     [Header("Автосбор спрайтов")]
+     public string memPath = "MemCards";      // папка Assets/Resources/MemCards
++    public string situationPath = "SituationCards"; // папка Assets/Resources/SituationCards
+ 
+     private List<Sprite> memSprites = new List<Sprite>();
+     private List<Sprite> situationSprites = new List<Sprite>();

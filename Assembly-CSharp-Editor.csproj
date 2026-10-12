@@ -66,7 +66,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\TutorialInfo\Scripts\Editor\ReadmeEditor.cs" />
-    <Compile Include="Assets\Mirror\ScriptTemplates\Editor\MoveToAssetsFolder.cs" />
+    <Compile Include="Assets\ScriptTemplates\Editor\MoveToAssetsFolder.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
