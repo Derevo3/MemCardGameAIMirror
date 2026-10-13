@@ -1,6 +1,8 @@
 using Mirror;
 using UnityEngine;
 
+public enum CardType { Mem, Situation, Fold }
+
 public class Card : NetworkBehaviour
 {
     [SyncVar(hook = nameof(OnAnyChanged))] public int cardIndex;
@@ -8,6 +10,7 @@ public class Card : NetworkBehaviour
     [SyncVar(hook = nameof(OnAnyChanged))] public uint ownerNetId;
     [SyncVar(hook = nameof(OnAnyChanged))] public uint selectedBy;
     [SyncVar(hook = nameof(OnAnyChanged))] public bool inFold;
+    [SyncVar(hook = nameof(OnAnyChanged))] public CardType cardType;
 
     [SerializeField] private Sprite backSprite;
     [SerializeField] float moveSpeed = 12f;
@@ -45,6 +48,7 @@ public class Card : NetworkBehaviour
     void OnAnyChanged(uint oldV, uint newV) => RefreshVisual();
     void OnAnyChanged(int o, int n) => RefreshVisual();
     void OnAnyChanged(bool o, bool n) => RefreshVisual();
+    void OnAnyChanged(CardType o, CardType n) => RefreshVisual();
 
     void RefreshVisual()
     {
@@ -56,15 +60,24 @@ public class Card : NetworkBehaviour
 
         bool showFront = faceUp || isMyCard;
         
-        rend.sprite = showFront
-            ? GameManager.Instance.GetMemSprite(cardIndex)
-            : backSprite;
-
-        if (inFold)
+        Sprite frontSprite = null;
+        if (showFront)
         {
-            rend.color = Color.white;
-            return;
+            switch (cardType)
+            {
+                case CardType.Mem:
+                    frontSprite = GameManager.Instance.GetMemSprite(cardIndex);
+                    break;
+                case CardType.Situation:
+                    frontSprite = GameManager.Instance.GetSituationSprite(cardIndex);
+                    break;
+                default: // Fold и любые другие типы
+                    frontSprite = backSprite;
+                    break;
+            }
         }
+
+        rend.sprite = showFront ? frontSprite : backSprite;
     
         rend.color = isChosenByMe ? new Color(0.85f, 0.85f, 0.5f) : Color.white;
     }

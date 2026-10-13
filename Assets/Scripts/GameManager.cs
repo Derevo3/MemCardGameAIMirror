@@ -29,8 +29,8 @@ public class GameManager : NetworkBehaviour
     public string memPath = "MemCards";
     public string situationPath = "SituationCards";
 
-    private List<Sprite> memSprites = new List<Sprite>();
-    private List<Sprite> situationSprites = new List<Sprite>();
+    public List<Sprite> memSprites = new List<Sprite>();
+    public List<Sprite> situationSprites = new List<Sprite>();
 
     // Серверные структуры
     readonly List<int> memDeck = new List<int>();
@@ -159,7 +159,8 @@ public class GameManager : NetworkBehaviour
             // 2. Situation в центр
             int cardIndex = situationDeck[0];
             Sprite cardSprite = GetSituationSprite(cardIndex);
-            situationCard = SpawnCard(situationDeck[0], 0, situationSlot.position, cardSprite);
+            situationCard = SpawnCard(situationDeck[0], 0, situationSlot.position, cardSprite, CardType.Situation);
+            situationCard.faceUp = true;
             situationDeck.RemoveAt(0);
 
             // 3. Игроки выбирают карту из руки
@@ -232,6 +233,8 @@ public class GameManager : NetworkBehaviour
             situationCard.ownerNetId = 0;
             situationCard.selectedBy = 0;
             situationCard.inFold = true;
+            situationCard.cardType = CardType.Fold;
+            situationCard = null;
 
             foreach (var p in players)
             {
@@ -239,6 +242,7 @@ public class GameManager : NetworkBehaviour
                 RpcMoveCard(c.netId, foldSlot.position + Vector3.right * (foldCount++ * 0.02f));
                 c.faceUp = false;
                 c.inFold = true;
+                c.cardType = CardType.Fold;
                 c.ownerNetId = 0;
                 c.selectedBy = 0;
             }
@@ -265,6 +269,7 @@ public class GameManager : NetworkBehaviour
                 c.faceUp = false;
                 c.ownerNetId = 0;
                 c.inFold = true;
+                c.cardType = CardType.Fold;
             }
             hands[p].Clear();
         }
@@ -293,17 +298,18 @@ public class GameManager : NetworkBehaviour
 
         Sprite cardSprite = GetMemSprite(cardIndex);
 
-        Card c = SpawnCard(cardIndex, p.netId, pos, cardSprite);
+        Card c = SpawnCard(cardIndex, p.netId, pos, cardSprite, CardType.Mem);
         memDeck.RemoveAt(0);
         hands[p].Add(c);
         return true;
     }
 
-    Card SpawnCard(int index, uint owner, Vector3 pos, Sprite sprite)
+    Card SpawnCard(int index, uint owner, Vector3 pos, Sprite sprite, CardType type)
     {
         Card c = Instantiate(cardPrefab, pos, Quaternion.identity);
         c.inFold = false;
         c.cardIndex = index;
+        c.cardType = type;
         c.faceUp = false;
         c.ownerNetId = owner;
         NetworkServer.Spawn(c.gameObject);
